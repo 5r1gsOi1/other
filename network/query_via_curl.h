@@ -11,10 +11,11 @@ class QueryViaCurl : public QueryPerformer {
   QueryViaCurl();
   virtual ~QueryViaCurl() override;
 
-  virtual std::string PerformGetRequest(const std::string& url,
-                                        const std::string& parameters) override;
-  virtual std::string PerformPostRequest(const std::string& url,
-                                         const std::string& data) override;
+  virtual std::string PerformGetRequest(
+      const std::string& url, const std::string& parameters_string) override;
+  virtual std::string PerformPostRequest(
+      const std::string& url, const std::string& data,
+      const std::string& data_format) override;
 
  protected:
   class QueryViaCurlImpl;

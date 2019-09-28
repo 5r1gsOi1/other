@@ -14,7 +14,19 @@
 // pages = https://en.wikipedia.org/wiki/
 
 namespace wiki {
-std::string LinearizeRequestParameters(
+std::string EncodeRequestParametersAsJson(
+    const QueryViaNetwork::RequestParameters& parameters) {
+  jzon::Node node = jzon::object();
+  for (auto& i : parameters) {
+    node.add(UrlEncode(i.first), UrlEncode(i.second));
+  }
+  jzon::Writer writer{};
+  std::string result{};
+  writer.writeString(node, result);
+  return result;
+}
+
+std::string EncodeRequestParametersAsString(
     const QueryViaNetwork::RequestParameters& parameters) {
   std::string linearized_parameters;
   for (auto& i : parameters) {
@@ -23,6 +35,16 @@ std::string LinearizeRequestParameters(
   }
   linearized_parameters.erase(linearized_parameters.size() - 1);
   return linearized_parameters;
+}
+
+std::string EncodeParametersForPost(
+    const QueryViaNetwork::RequestParameters& parameters) {
+  return EncodeRequestParametersAsString(parameters);
+}
+
+std::string EncodeParametersForGet(
+    const QueryViaNetwork::RequestParameters& parameters) {
+  return EncodeRequestParametersAsString(parameters);
 }
 
 QueryViaNetwork::QueryViaNetwork(
@@ -71,8 +93,14 @@ QueryViaNetwork::RequestParameters CreateGetRevisionsParameters(
 std::string QueryViaNetwork::PerformPostRequest(
     const std::string& url,
     const QueryViaNetwork::RequestParameters& parameters) {
-  return network_->PerformPostRequest(url,
-                                      LinearizeRequestParameters(parameters));
+  return network_->PerformPostRequest(url, EncodeParametersForPost(parameters),
+                                      network::data_format::kUrlEncoded);
+}
+
+std::string QueryViaNetwork::PerformGetRequest(
+    const std::string& url,
+    const QueryViaNetwork::RequestParameters& parameters) {
+  return network_->PerformGetRequest(url, EncodeParametersForGet(parameters));
 }
 
 bool RequestIsComplete(const jzon::Node& node) {
@@ -83,8 +111,8 @@ Page DecodeJsonResult(const std::string& page_title, const std::string& json) {
   jzon::Parser parser{};
   jzon::Node node{parser.parseString(json)};
   if (not node.isValid() or not RequestIsComplete(node)) {
-    // std::cerr << "throwing errors::RequestNotValid()" << std::endl
-    //          << json << std::endl;
+    std::cerr << "throwing errors::RequestNotValid()" << std::endl
+              << json << std::endl;
     throw QueryViaNetwork::errors::ResponseIsNotValid();
   }
   auto json_page = node.get("query").get("pages").get(0);
@@ -225,7 +253,7 @@ Page QueryViaNetwork::GetPageRevisions(const std::string& page_title,
                                                  end_timestamp,
                                                  content_should_be_included),
        parameters_copy = parameters;
-  std::cout << LinearizeRequestParameters(parameters) << std::endl;
+  std::cout << EncodeParametersForPost(parameters) << std::endl;
 DoWhileContinueMarkerIsFoundInResponse:
   auto response_string =
       PerformPostRequest(parameters_.api_address, parameters_copy);
@@ -391,34 +419,6 @@ void QueryViaNetwork::Logout() {
      printf("(none)\n");
    }
    curl_slist_free_all(cookies);
- }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- jzon::Node CreateJsonRequestFromParametersList(
-     const wiki::Server::RequestParameters& parameters) {
-   jzon::Node node = jzon::object();
-   for (auto& i : parameters) {
-     node.add(UrlEncode(i.first), UrlEncode(i.second));
-   }
-   return node;
  }
 
 #endif

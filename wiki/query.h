@@ -10,8 +10,9 @@ struct QueryPerformer {
 
     struct Technical : public General {};
     struct Connection : public Technical {};
-    struct Response : public Technical {};
-    struct Login : public Technical {};
+    struct Server : public General {};
+    struct Response : public Server {};
+    struct Login : public Server {};
 
     struct Semantic : public General {};
     struct Page : public Semantic {};

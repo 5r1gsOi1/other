@@ -10,9 +10,10 @@ class QueryViaCurl::QueryViaCurlImpl {
   QueryViaCurlImpl();
   ~QueryViaCurlImpl();
   std::string PerformGetRequest(const std::string& url,
-                                const std::string& parameters);
+                                const std::string& parameters_string);
   std::string PerformPostRequest(const std::string& url,
-                                 const std::string& data);
+                                 const std::string& data,
+                                 const std::string& data_format);
 
  private:
   CURL* curl_{};
@@ -23,14 +24,15 @@ QueryViaCurl::QueryViaCurl() : pimpl_{std::make_unique<QueryViaCurlImpl>()} {}
 
 QueryViaCurl::~QueryViaCurl() = default;
 
-std::string QueryViaCurl::PerformGetRequest(const std::string& url,
-                                            const std::string& parameters) {
-  return pimpl_->PerformGetRequest(url, parameters);
+std::string QueryViaCurl::PerformGetRequest(
+    const std::string& url, const std::string& parameters_string) {
+  return pimpl_->PerformGetRequest(url, parameters_string);
 }
 
 std::string QueryViaCurl::PerformPostRequest(const std::string& url,
-                                             const std::string& data) {
-  return pimpl_->PerformPostRequest(url, data);
+                                             const std::string& data,
+                                             const std::string& data_format) {
+  return pimpl_->PerformPostRequest(url, data, data_format);
 }
 
 size_t CurlWrite_CallbackFunc_StdString(void* contents, size_t size,
@@ -61,9 +63,9 @@ QueryViaCurl::QueryViaCurlImpl::~QueryViaCurlImpl() {
 }
 
 std::string QueryViaCurl::QueryViaCurlImpl::PerformGetRequest(
-    const std::string& url, const std::string& parameters) {
+    const std::string& url, const std::string& parameters_string) {
   std::string response;
-  std::string url_with_parameters = url + "?" + parameters;
+  std::string url_with_parameters = url + "?" + parameters_string;
   if (curl_) {
     curl_easy_setopt(curl_, CURLOPT_URL, url_with_parameters.c_str());
 
@@ -71,7 +73,7 @@ std::string QueryViaCurl::QueryViaCurlImpl::PerformGetRequest(
     // curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L); //only for https
 
     curl_easy_setopt(curl_, CURLOPT_WRITEDATA, &response);
-    char header[] = "Content-Type: application/octet-stream";
+    char header[] = "Content-Type: application/x-www-form-urlencoded";
     curl_slist headers{header, nullptr};
     curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, &headers);
 
@@ -91,7 +93,8 @@ std::string QueryViaCurl::QueryViaCurlImpl::PerformGetRequest(
 }
 
 std::string QueryViaCurl::QueryViaCurlImpl::PerformPostRequest(
-    const std::string& url, const std::string& data) {
+    const std::string& url, const std::string& data,
+    const std::string& data_format) {
   std::string response;
   if (curl_) {
     curl_easy_setopt(curl_, CURLOPT_URL, url.c_str());
@@ -102,8 +105,8 @@ std::string QueryViaCurl::QueryViaCurlImpl::PerformPostRequest(
                      CurlWrite_CallbackFunc_StdString);
     curl_easy_setopt(curl_, CURLOPT_WRITEDATA, &response);
 
-    char header[] = "Content-Type: application/octet-stream";
-    curl_slist headers{header, nullptr};
+    std::string header{"Content-Type: " + data_format};
+    curl_slist headers{header.data(), nullptr};
     curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, &headers);
 
     curl_easy_setopt(curl_, CURLOPT_POST, 1L);

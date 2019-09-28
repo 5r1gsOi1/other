@@ -28,9 +28,7 @@ class QueryViaNetwork : public wiki::QueryPerformer {
       }
     };
     struct UnexpectedContent : public Response {
-      const char* what() const noexcept override {
-        return "UnexpectedContent";
-      }
+      const char* what() const noexcept override { return "UnexpectedContent"; }
     };
     struct ContentSizeMismatsh : public Response {
       const char* what() const noexcept override {
@@ -69,6 +67,10 @@ class QueryViaNetwork : public wiki::QueryPerformer {
   bool IsLoggedIn() const { return logged_in_; }
 
   std::string PerformPostRequest(
+      const std::string& url,
+      const wiki::QueryViaNetwork::RequestParameters& parameters);
+
+  std::string PerformGetRequest(
       const std::string& url,
       const wiki::QueryViaNetwork::RequestParameters& parameters);
 
