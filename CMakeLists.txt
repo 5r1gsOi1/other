@@ -25,7 +25,7 @@ add_subdirectory(statistics)
 add_subdirectory(tasks)
 
 add_executable(main main.cpp)
-target_link_libraries(main jzon wiki statistics chart charts analysis network rank_afi)
+target_link_libraries(main jzon wiki statistics chart charts analysis network rank_afd)
 
 
 

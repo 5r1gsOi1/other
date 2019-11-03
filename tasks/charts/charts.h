@@ -24,6 +24,8 @@ void CreateDifferencesSvgCharts(const GeneralParameters& parameters,
 
 void CreateDibotSvgCharts(const GeneralParameters& parameters,
                           const Point<double> image_size,
-                          const Date& start_date, const Date& end_date);
+                          const Date& start_date, const Date& end_date,
+                          const std::string& file_name = std::string{},
+                          const size_t smooth_number = 5);
 
 #endif

@@ -65,6 +65,13 @@ struct CurvesDataPolicy {
   virtual bool MarkDateAsAbsent(const Date& date) = 0;
 };
 
+struct DefaultCurvesDataPolicy : public CurvesDataPolicy {
+  virtual ~DefaultCurvesDataPolicy() override = default;
+  virtual bool CacheDataIsPreferable(const Date&) override { return true; }
+  virtual bool DateMustBeIgnored(const Date&) override { return false; }
+  virtual bool MarkDateAsAbsent(const Date&) override { return false; }
+};
+
 class DateCurvesCreator {
  public:
   struct errors {};

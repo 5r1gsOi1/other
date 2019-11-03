@@ -5,7 +5,7 @@
 #include "statistics/statistics.h"
 #include "tasks/analysis/analysis.h"
 #include "tasks/charts/charts.h"
-#include "tasks/ranks/afi.h"
+#include "tasks/ranks/afd.h"
 
 int main() {
   std::cerr << "main start" << std::endl;
@@ -27,7 +27,8 @@ int main() {
   // 2010, 8, 24 -- DiBot start
   const Date statistics_start(2007, 9, 1), differences_curves_start(2007, 9, 1),
       dibot_start(2010, 9, 1), marathons_statistics_start = Date(2014, 12, 31),
-                               yesterday = --Date().Today();
+                               yesterday = --Date::Today(),
+                               month_start{Date::Today() - 365 * 5};
 
   const Point<double> picture_size{2000, 1125};
 
@@ -42,9 +43,11 @@ int main() {
   //  CreateDifferencesSvgCharts(parameters, picture_size,
   //  differences_curves_start,
   //                             yesterday);
-  //CreateDibotSvgCharts(parameters, picture_size, dibot_start, yesterday);
+  CreateDibotSvgCharts(parameters, picture_size, dibot_start, yesterday);
+  //CreateDibotSvgCharts(parameters, picture_size, month_start, yesterday,
+  //                     "dibot_month.svg", 1);
 
-  CreateRanksForAfd(parameters, Date{2018, 12, 31}, Date{2018, 12, 31});
+  // CreateRanksForAfd(parameters, Date{2018, 12, 31}, Date{2018, 12, 31});
 
   // CheckAfiForDuplicates(parameters, yesterday);
   return 0;

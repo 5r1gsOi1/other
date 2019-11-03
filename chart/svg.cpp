@@ -61,11 +61,17 @@ svg::Path::Path(const std::vector<Point<double>> &points,
 void svg::Path::OutputAttributes(std::ostream &s) const {
   Tag::OutputAttributes(s);
   if (not points_.empty()) {
-    s << " d=\"M " << points_.at(0).x << " " << points_.at(0).y;
+    std::ios init(nullptr);
+    init.copyfmt(s);
+    constexpr const int p{1};
+    s << " d=\"M " << std::setprecision(p) << std::fixed << points_.at(0).x
+      << " " << std::setprecision(p) << std::fixed << points_.at(0).y;
     for (auto it = points_.begin() + 1; it != points_.end(); ++it) {
-      s << " L " << it->x << " " << it->y;
+      s << " L " << std::setprecision(p) << std::fixed << it->x << " "
+        << std::setprecision(p) << std::fixed << it->y;
     }
     s << "\"";
+    s.copyfmt(init);
   }
 }
 

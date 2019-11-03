@@ -79,6 +79,14 @@ struct Date {
     return duration_in_seconds / seconds_in_a_day;
   }
 
+  Date operator-(const int number_of_days) const {
+    Date result{*this};
+    for (int i{}; i < number_of_days; ++i) {
+      --result;
+    }
+    return result;
+  }
+
   bool operator<(const Date& other) const {
     long d1 = day + (month << 5) + (year << 9);
     long d2 = other.day + (other.month << 5) + (other.year << 9);
@@ -114,6 +122,12 @@ struct Date {
     int month = 1 + time_info->tm_mon;
     int day = time_info->tm_mday;
     return Date{year, month, day};
+  }
+
+  static Date ThisMonthStart() {
+    auto date{Date::Today()};
+    date.day = 1;
+    return date;
   }
 
   void SetToToday() { *this = Today(); }
@@ -226,3 +240,17 @@ std::ostream& operator<<(std::ostream& stream, const Date& date);
 std::istream& operator>>(std::istream& stream, Date& date);
 
 #endif
+
+/*
+// test
+
+#include <chrono>
+
+using days = std::chrono::duration<std::chrono::hours::rep, std::ratio<86400>>;
+using years =
+    std::chrono::duration<std::chrono::hours::rep, std::ratio<31556952>>;
+
+days operator""_days(const unsigned long long days) { return ::days{days}; }
+days operator""_years(const unsigned long long years) { return ::years{years}; }
+
+*/

@@ -10,6 +10,9 @@
 #include "chart/curves.h"
 #include "chart/date_chart/chart.h"
 #include "tasks/charts/dibot/dibot_chart.h"
+
+#include <fmt/format.h>
+
 /*
 bool TimestampEqual(const wiki::Timestamp& timestamp, const int year,
                     const int month, const int day, const int hour,
@@ -45,6 +48,10 @@ bool Test_Timestamp() {
 
 
 bool Test_PageGetter() {
+
+    std::vector<int> v;
+  std::cout << fmt::format("{1} and {0}", 123, "test") << std::endl;
+
   /*const Point<double> image_size{2000, 1125};
   const Date &start_date{2010, 9, 1};
   const Date &end_date{--Date().Today()};

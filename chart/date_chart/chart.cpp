@@ -235,12 +235,12 @@ void DetailedSvgChart::AddGrid() {
 void DetailedSvgChart::AddNumbers() {
   SvgChart::AddNumbersX(CreateYearGridNumbers(start_date_, end_date_),
                         svg::CreateFontAttributes("Verdana", 30) +
-                            svg::CreateFillAttributes("#333333"));
+                            svg::CreateFillAttributes("#555"));
   SvgChart::AddNumbersY(
       CreateValueGridNumbers(static_cast<int>(extremums_.max.y),
                              vertical_numbers_step_),
       svg::CreateFontAttributes("Verdana", 30) +
-          svg::CreateFillAttributes("#333333"));
+          svg::CreateFillAttributes("#555"));
 }
 
 void DetailedSvgChart::AddCurves() {
@@ -269,7 +269,7 @@ void DetailedSvgChart::AddCurvesToLegend() {
       SvgChart::AddLegendItemLine(
           curves_.at(curve_number).name,
           SvgChart::FontParameters{"Verdana", 30,
-                                   svg::CreateFillAttributes("#333333")},
+                                   svg::CreateFillAttributes("#555")},
           attributes_.at(curve_number));
     }
   }
@@ -278,7 +278,7 @@ void DetailedSvgChart::AddCurvesToLegend() {
 void DetailedSvgChart::AddLegend() {
   auto attributes = svg::CreateFillAttributes("white", "", "1.");
   // attributes.insert({"rx", svg::attributes::Pixels(20)});
-  auto stroke_attributes = svg::CreateStrokeAttributes("#333333", 1.5);
+  auto stroke_attributes = svg::CreateStrokeAttributes("#555", 1.5);
   attributes.insert(stroke_attributes.begin(), stroke_attributes.end());
   SvgChart::AddLegend(Point<double>{200., 56.}, attributes);
 }

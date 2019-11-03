@@ -92,12 +92,13 @@ std::optional<std::string> GetLastUserNameFromString(const std::string& text) {
               link_prefix == "User" or link_prefix == "Участник" or
               link_prefix == "участник") {
             auto username{full_link.substr(colon + 1, middle - colon - 1)};
-            return username;
+            return std::optional<std::string>{username};
           }
         }
       }
     }
   }
+  return std::nullopt;
 }
 
 std::optional<wiki::parse::UserMessage> GetUserFromAutoSummary(

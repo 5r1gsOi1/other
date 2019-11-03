@@ -16,7 +16,7 @@ struct Curve {
 
 using Curves = std::vector<Curve>;
 
-void SmoothCurve(const int smooth_number, Curve& curve);
-void SmoothCurves(const int smooth_number, Curves& curves);
+void SmoothCurve(const size_t smooth_number, Curve& curve);
+void SmoothCurves(const size_t smooth_number, Curves& curves);
 
 }  // namespace chart

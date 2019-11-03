@@ -1,15 +1,14 @@
 
-#ifndef BASIC_H_
-#define BASIC_H_
+#pragma once
 
 #include <cmath>
 #include <fstream>
 #include <limits>
+#include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <optional>
-#include <memory>
 
 namespace errors {
 class General : public std::exception {};
@@ -33,9 +32,9 @@ class NotParsedFromString : public General {};
 
 template <typename T>
 struct Point {
-  T x, y;
-  Point() : x{T{}}, y{T{}} {}
-  Point(const T& x_, const T& y_) : x(x_), y(y_) {}
+  T x{}, y{};
+  Point() = default;
+  Point(const T& x_, const T& y_) : x{x_}, y{y_} {}
   Point<T> operator-(const Point<T>& other) const {
     return Point<T>(x - other.x, y - other.y);
   }
@@ -49,7 +48,7 @@ struct Point {
 };
 
 struct PointArea {
-  Point<double> min, max;
+  Point<double> min{}, max{};
   double height() const noexcept { return max.y - min.y; }
   double width() const noexcept { return max.x - min.x; }
 };
@@ -92,7 +91,7 @@ void PutDataToFileOnDisk(const std::string& file_name, const Data& data,
 template <int MaxPrecision = 5>
 class FixedPointNumber {
  public:
-  FixedPointNumber() : integer_(0), fraction_(0) {}
+  FixedPointNumber() = default;
   FixedPointNumber(const int integer, const unsigned int fraction)
       : integer_(integer), fraction_(fraction) {
     fraction_ = RemoveTrailingZeros(CutToPrecision(fraction_, MaxPrecision));
@@ -131,8 +130,8 @@ class FixedPointNumber {
   }
 
  private:
-  int integer_;
-  unsigned int fraction_;
+  int integer_{};
+  unsigned int fraction_{};
 
   static unsigned int RemoveTrailingZeros(const unsigned int number) {
     auto result{number};
@@ -175,5 +174,3 @@ std::size_t NumberOfSymbolsInUtf8String(const std::string& string);
 std::istream& SafeGetline(std::istream& stream, std::string& string);
 
 void EnsureAllfoldersExists(const FileSystemPaths& paths);
-
-#endif

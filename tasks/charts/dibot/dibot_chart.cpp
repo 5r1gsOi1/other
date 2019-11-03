@@ -236,6 +236,7 @@ std::unique_ptr<chart::DateCurvesCreator> CreateDibotDateCurvesCreator(
   CreateDirectoryIfNotExists(dibot_subfolder);
   auto curves_data_policy{std::make_unique<DibotCurvesDataPolicy>(
       dibot_subfolder + "/_absent.txt", dibot_subfolder + "/_excluded.txt")};
+
   auto curves_cache{std::make_unique<chart::CurvesDataCacheFS>(dibot_subfolder +
                                                                "/_cache.txt")};
 

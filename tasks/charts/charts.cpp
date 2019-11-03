@@ -279,19 +279,20 @@ void CreateDetailedSvgCharts(const GeneralParameters &parameters,
 
 void CreateDibotSvgCharts(const GeneralParameters &parameters,
                           const Point<double> image_size,
-                          const Date &start_date, const Date &end_date) {
+                          const Date &start_date, const Date &end_date,
+                          const std::string &user_provided_file_name,
+                          const size_t smooth_number) {
   std::cout << __func__ << " : " << start_date << " - " << end_date
             << std::endl;
 
   auto curves_creator{CreateDibotDateCurvesCreator(parameters)};
   auto dibot_curves{curves_creator->create(start_date, end_date)};
-  const int smooth_number{2};
   chart::SmoothCurves(smooth_number, dibot_curves);
 
-  DetailedSvgChart totals_chart(image_size, start_date, end_date,
-                                "Количество номинаций");
+  DetailedSvgChart totals_chart{image_size, start_date, end_date,
+                                "Количество номинаций"};
 
-  double curve_width = 4.;
+  const double curve_width{3.};
 
   totals_chart.AddCurve(dibot_curves[0], svg::CreateStrokeAttributes(
                                              "green", curve_width, "round"));
@@ -307,6 +308,8 @@ void CreateDibotSvgCharts(const GeneralParameters &parameters,
   totals_chart.AddCurve(dibot_curves[15], svg::CreateStrokeAttributes(
                                               "orange", curve_width, "round"));
 
-  totals_chart.SaveToFile(parameters.paths.out_charts_folder +
-                          "/dibot_totals.svg");
+  const std::string file_name{user_provided_file_name.empty()
+                                  ? "dibot_totals.svg"
+                                  : user_provided_file_name};
+  totals_chart.SaveToFile(parameters.paths.out_charts_folder + "/" + file_name);
 }
