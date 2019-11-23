@@ -90,6 +90,12 @@ void svg::Path::OutputAttributes(std::ostream &s) const {
   }
 }
 
+void svg::Path::OutToStream(std::ostream &s, const int indent) const {
+  if (not this->points_.empty()) {
+    Tag::OutToStream(s, indent);
+  }
+}
+
 svg::Title::Title(const std::string &title) {
   name = "title";
   children.push_back(std::make_unique<PlainText>(title));

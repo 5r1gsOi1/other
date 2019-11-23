@@ -170,7 +170,7 @@ DibotCurvesDataPolicy::DibotCurvesDataPolicyImpl::DibotCurvesDataPolicyImpl(
 
 bool DibotCurvesDataPolicy::DibotCurvesDataPolicyImpl::CacheDataIsPreferable(
     const Date& date) {
-  return today_ - date > 1;
+  return today_ - date >= 1;
 }
 
 bool DibotCurvesDataPolicy::DibotCurvesDataPolicyImpl::DateMustBeIgnored(

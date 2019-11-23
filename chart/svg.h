@@ -161,6 +161,8 @@ struct Path : public Tag {
        const Attributes& attributes_);
   Path(const std::vector<Point<double>>& points, const Attributes& attributes_);
   virtual void OutputAttributes(std::ostream& s) const override;
+  virtual void OutToStream(std::ostream& s,
+                           const int indent = 0) const override;
 
  private:
   std::vector<std::pair<Point<double>, char>> points_;
