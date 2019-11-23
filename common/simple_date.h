@@ -136,6 +136,13 @@ struct Date {
   //
   //
 
+  std::string GetStartOfDayTimestamp() const {
+    return this->ToString() + "T00:00:00Z";
+  }
+  std::string GetEndOfDayTimestamp() const {
+    return this->ToString() + "T23:59:59Z";
+  }
+
   std::string GetGenitiveStringInRussian() const {
     return std::to_string(day) + " " + GetMonthGenitiveNameInRussian(month) +
            " " + std::to_string(year);

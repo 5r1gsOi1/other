@@ -2,6 +2,7 @@
 #include "afd.h"
 
 #include "network/query_via_curl.h"
+#include "re2/re2.h"
 #include "statistics/statistics.h"
 #include "tasks/charts/dibot/dibot_chart.h"
 #include "wiki/cache_fs.h"
@@ -240,11 +241,21 @@ auto CreatePageGetter(const GeneralParameters& parameters) {
   auto cache{std::make_unique<wiki::PageCacheFS>(
       parameters.paths.server_cache_folder)};
   // TODO: make cache more intelligent, for different functions
-  auto policy{std::make_unique<wiki::CachePolicyAlwaysCache>()};
+  auto policy{std::make_unique<wiki::CachePolicyNeverCache>()};
 
   auto page_getter{std::make_unique<wiki::CachedPageGetter>(
       std::move(query), std::move(cache), std::move(policy))};
 
+  return page_getter;
+}
+
+auto CreatePageGetterForStats(const GeneralParameters& parameters) {
+  wiki::QueryViaNetwork::ServerParameters server_parameters{
+      parameters.server.api_address, parameters.server.pages_address};
+  auto network_query{std::make_unique<network::QueryViaCurl>()};
+  auto query{std::make_unique<wiki::QueryViaNetwork>(server_parameters,
+                                                     std::move(network_query))};
+  auto page_getter{std::make_unique<wiki::DirectPageGetter>(std::move(query))};
   return page_getter;
 }
 
@@ -270,7 +281,7 @@ std::vector<Date> CreateDaysFromNominations(
   return result;
 }
 
-static const std::string kAfiPageName{"Википедия:К удалению"};
+static const std::string kAfdPageName{"Википедия:К удалению"};
 
 static const char kAFDParseRegex[] =
     R"(\{\{\s*(У|у){1}даление\s*статей\s*\|\s*([0-9]{4}-[0-9]{1,2}-[0-9]{1,2})\s*\|\s*(.*)\}\}\n)";
@@ -299,9 +310,9 @@ stats::Nominations ParseMainPage(const wiki::Page::Revision& revision,
 
 std::vector<Date> GetNotClosedDays(const Date& start_date, const Date& end_date,
                                    wiki::PageGetter& page_getter) {
-  auto date{start_date};
+  auto date{start_date - 1};
   auto start_date_revision{
-      page_getter.GetLastRevisionForDay(kAfiPageName, --date)};
+      page_getter.GetLastRevisionForDay(kAfdPageName, date)};
   if (start_date_revision.has_value()) {
     auto nominations{
         ParseMainPage(start_date_revision.value(), kAFDParseRegex)};
@@ -413,6 +424,13 @@ enum class SectionType : int {
   kCompound = 4,
 };
 
+struct SectionProperties {
+  bool title_is_full_link{};
+  bool contains_forall_subsection{};
+  bool first_subsection_is_full_link{};
+  int subsections_count{};
+};
+
 SectionType DetermineSectionType(const PageSection& section) {
   using namespace wiki::parse;
   std::string title{RemoveStrikeOutTags(section.title)};
@@ -447,7 +465,8 @@ bool LinkPrefixBelongsToIP(const std::string& prefix) {
   return prefix == "Special" or prefix == "special";
 }
 
-std::optional<std::string> GetLastUserNameFromString(const std::string& text) {
+std::optional<std::pair<std::string, bool>> GetLastUserNameFromString(
+    const std::string& text) {
   for (auto end{text.rfind("]]")}, start{text.rfind("[[", end)};
        end != std::string::npos and start != std::string::npos;
        end = text.rfind("]]", end - 1), start = text.rfind("[[", end)) {
@@ -460,12 +479,14 @@ std::optional<std::string> GetLastUserNameFromString(const std::string& text) {
           auto link_prefix{full_link.substr(0, colon)};
           if (LinkPrefixBelongsToUser(link_prefix)) {
             auto username{full_link.substr(colon + 1, middle - colon - 1)};
-            return RemoveLeadingSpaces(username);
+            return std::make_optional(
+                std::make_pair(RemoveLeadingSpaces(username), false));
           } else if (LinkPrefixBelongsToIP(link_prefix)) {
             auto slash{full_link.find("/")};
             if (slash != std::string::npos) {
               auto username{full_link.substr(slash + 1, middle - slash - 1)};
-              return RemoveLeadingSpaces(username);
+              return std::make_optional(
+                  std::make_pair(RemoveLeadingSpaces(username), true));
             }
           }
         }
@@ -496,8 +517,9 @@ std::optional<wiki::parse::UserMessage> GetUserWithLeastTimestamp(
     auto name{GetLastUserNameFromString(
         text.substr(prev_ts_pos, ts_pos - prev_ts_pos))};
     if (name.has_value()) {
-      result.name = name.value();
-      return result;
+      result.name = name.value().first;
+      result.is_ip = name.value().second;
+      return std::make_optional(result);
     }
   }
   return std::nullopt;
@@ -531,7 +553,7 @@ std::optional<wiki::parse::UserMessage> GetUserFromAutoSummary(
         auto pure_username{GetLastUserNameFromString(username)};
         if (pure_username.has_value()) {
           return wiki::parse::UserMessage{
-              pure_username.value(), message,
+              pure_username.value().first, message,
               static_cast<std::string>(normal_timestamp)};
         }
       }
@@ -559,13 +581,14 @@ PageSection* GetAutoSummarySubsection(const PageSection& section) {
 }
 
 wiki::parse::Nomination CreateNominationFromSimpleSection(
-    const PageSection& section) {
+    const PageSection& section, const Date& date) {
   wiki::parse::Nomination result{};
+  result.date = date;
   bool title_is_stricken_out{
       wiki::parse::SectionTitleIsStrickenOut(section.title)};
   result.name = wiki::parse::RemoveLinkBrackets(
       wiki::parse::RemoveStrikeOutTags(section.title));
-  result.is_closed = title_is_stricken_out;
+  result.is_closed = title_is_stricken_out;  // WTF???
   auto start_user{GetUserWithLeastTimestamp(section.text)};
   if (start_user.has_value()) {
     result.start_user = start_user.value();
@@ -580,6 +603,7 @@ wiki::parse::Nomination CreateNominationFromSimpleSection(
   } else {
     auto* summary{GetSummarySubsection(section)};
     if (summary) {
+      result.is_closed = true;
       auto end_user{GetUserWithLeastTimestamp(summary->text)};
       if (end_user.has_value()) {
         result.close_user = end_user.value();
@@ -591,59 +615,106 @@ wiki::parse::Nomination CreateNominationFromSimpleSection(
 }
 
 std::vector<wiki::parse::Nomination> CreateNominationsFromSimpleSection(
-    const PageSection& section) {
-  return {CreateNominationFromSimpleSection(section)};
+    const PageSection& section, const Date& date) {
+  return {CreateNominationFromSimpleSection(section, date)};
 }
 
-std::vector<wiki::parse::Nomination> CreateNominationsFromCompoundSection(
-    const PageSection& section) {
-  std::vector<wiki::parse::Nomination> result{};
-  for (const auto& ss : section.subsections) {
-    if (ss and wiki::parse::StringIsFullLink(
-                   wiki::parse::RemoveStrikeOutTags(ss->title))) {
-      auto n{CreateNominationFromSimpleSection(*ss)};
-      result.push_back(n);
-    }
-  }
+bool StringIsResultHeader(const std::string& string) {
+  return string == "Итог" or string == "Автоитог";
+}
 
-  // add for all section
+bool StringIsPreliminaryResultHeader(const std::string& string) {
+  return string == "Предварительный итог" or string == "предварительный итог";
+}
 
-  const auto* summary{GetSummarySubsection(section)};
-  if (summary) {
-    auto end_user{GetUserWithLeastTimestamp(summary->text)};
-    if (end_user.has_value()) {
-      for (auto& n : result) {
-        n.is_closed = true;
-        if (n.close_user.name.empty()) {
-          n.close_user = end_user.value();
-        }
-      }
-    }
+wiki::parse::UserMessage GetFirstUserMessage(const PageSection& section,
+                                             const Date& date) {
+  wiki::parse::UserMessage result{};
+
+  re2::StringPiece input{section.text};
+  const char pattern[]{
+      R"(([0-9]{2}:[0-9]{2}),\s([0-9]{1,2}\s(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\s[0-9]{4})\s\(UTC\))"};
+
+  re2::StringPiece timestamp{};
+  while (RE2::Consume(&input, pattern, &timestamp)) {
+    std::cout << timestamp << std::endl;
   }
 
   return result;
 }
 
+std::vector<wiki::parse::Nomination> CreateNominationsFromCompoundSection(
+    const PageSection& section, const Date& date) {
+  std::vector<wiki::parse::Nomination> result{};
+  wiki::parse::UserMessage global_close_user{};
+  bool globally_closed{false};
+  for (const auto& ss : section.subsections) {
+    if (ss) {
+      auto title{wiki::parse::RemoveStrikeOutTags(ss->title)};
+      if (wiki::parse::StringIsFullLink(title)) {
+        auto n{CreateNominationFromSimpleSection(*ss, date)};
+        result.push_back(n);
+      } else if (StringIsResultHeader(title)) {
+        globally_closed = true;
+        global_close_user = GetFirstUserMessage(*ss, date);
+      } else if (StringIsPreliminaryResultHeader(title)) {
+        // for all subsections
+      } else if (not ss->subsections.empty()) {
+        auto nominations{CreateNominationsFromCompoundSection(*ss, date)};
+        result.insert(result.end(), nominations.begin(), nominations.end());
+      }
+    }
+  }
+  if (globally_closed) {
+    for (auto& n : result) {
+      if (not n.is_closed or
+          (not n.close_user.timestamp.empty() and
+           global_close_user.timestamp < n.close_user.timestamp)) {
+        n.is_closed = true;
+        n.close_user = global_close_user;
+      }
+    }
+  }
+  return result;
+}
+
 std::vector<wiki::parse::Nomination> CreateNominationsFromSection(
-    const PageSection& section) {
+    const PageSection& section, const Date& date) {
   switch (DetermineSectionType(section)) {
     case SectionType::kSimple:
-      return CreateNominationsFromSimpleSection(section);
+      return CreateNominationsFromSimpleSection(section, date);
     case SectionType::kCompound:
-      return CreateNominationsFromCompoundSection(section);
+      return CreateNominationsFromCompoundSection(section, date);
     default:
       return {};
   }
 }
 
-wiki::parse::NominationsDay GetNominationsDayFromAfiDayPage(
+bool AfdDayPageIsClosed(const std::string& page_text) {
+  re2::StringPiece parameters{};
+  bool navigation_found{RE2::PartialMatch(
+      page_text, R"(\{\{\s*[к|К]У-Навигация\s*(\|\s*[^\}]*\s*)\}\})",
+      &parameters)};
+  if (not navigation_found or parameters.empty()) {
+    return false;
+  }
+  re2::StringPiece closed_word{}, value{};
+  bool closed_word_found{
+      RE2::PartialMatch(page_text, R"(\|\s*(закрыто|closed)\s*(=\s*[^\}\|]*)?)",
+                        &closed_word, &value)};
+  return closed_word_found;
+}
+
+wiki::parse::NominationsDay GetNominationsDayFromAfdDayPage(
     const Date& date, const std::string& page_name,
     const wiki::Page::Revision& revision) {
   wiki::parse::NominationsDay day{};
+  day.date = date;
+  day.is_closed = AfdDayPageIsClosed(revision.content);
   auto sections{SplitPageToSections(page_name, revision.content)};
   for (const auto& s : sections.subsections) {
     if (s) {
-      const auto nominations{CreateNominationsFromSection(*s.get())};
+      auto nominations{CreateNominationsFromSection(*s.get(), date)};
       day.nominations.insert(day.nominations.end(), nominations.begin(),
                              nominations.end());
     }
@@ -660,7 +731,7 @@ stats::DetailedRanks CreateRanksForDay(const Date& date,
                                        const std::string& page_name,
                                        const wiki::Page::Revision& revision) {
   stats::DetailedRanks ranks{};
-  auto day{GetNominationsDayFromAfiDayPage(date, page_name, revision)};
+  auto day{GetNominationsDayFromAfdDayPage(date, page_name, revision)};
   for (const auto& n : day.nominations) {
     if (not n.start_user.name.empty()) {
       Date open_date{GetDateFromTimestamp(n.start_user.timestamp)};
@@ -784,7 +855,7 @@ stats::DetailedRanks CreateRanksForAfd(const GeneralParameters& parameters,
   std::vector<Date> dates{
       GetNotClosedDays(start_date, end_date, *page_getter.get())};
   for (const auto& date : dates) {
-    std::string page_name{kAfiPageName + "/" + date.ToStringInRussian()};
+    std::string page_name{kAfdPageName + "/" + date.ToStringInRussian()};
     std::cerr << page_name << std::endl;
     auto revision{page_getter->GetLastRevision(page_name)};
     if (revision.has_value()) {
@@ -805,4 +876,28 @@ stats::DetailedRanks CreateRanksForAfd(const GeneralParameters& parameters,
       ranks, parameters.paths.out_charts_folder + "/unparsed.txt", "AFD");
 
   return ranks;
+}
+
+wiki::parse::Nominations CreateNominationsForAfd(
+    const GeneralParameters& parameters, const Date& start_date,
+    const Date& end_date) {
+  auto page_getter{CreatePageGetterForStats(parameters)};
+  wiki::parse::Nominations all_nominations{};
+
+  for (auto date{start_date}; date <= end_date; ++date) {
+    std::string page_name{kAfdPageName + "/" + date.ToStringInRussian()};
+    std::cerr << page_name << std::endl;
+    auto revision{page_getter->GetLastRevision(page_name)};
+    if (revision.has_value()) {
+      auto nominations_day{
+          GetNominationsDayFromAfdDayPage(date, page_name, revision.value())};
+      all_nominations.insert(all_nominations.end(),
+                             nominations_day.nominations.begin(),
+                             nominations_day.nominations.end());
+      std::cerr << "\t\t" << nominations_day.nominations.size() << std::endl;
+    } else {
+      std::cerr << "\t\tNO VALUE" << std::endl;
+    }
+  }
+  return all_nominations;
 }

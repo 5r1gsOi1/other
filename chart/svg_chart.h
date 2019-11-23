@@ -100,7 +100,7 @@ class SvgChart {
                 const svg::Attributes& stroke);
   void AddNumbersY(const std::vector<std::pair<double, std::string>>& values,
                    const svg::Attributes& attributes);
-  void AddCurve(const chart::Curve& curve, const svg::Attributes& stroke);
+  void AddCurve(const chart::Curve<double>& curve, const svg::Attributes& stroke);
   void SetWorkingArea(const PointArea& working_area);
   void AddBackground(const svg::Attributes& fill);
 

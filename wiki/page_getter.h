@@ -13,6 +13,9 @@ struct PageGetter {
   virtual ~PageGetter() = default;
   virtual std::optional<wiki::Page::Revision> GetRevision(
       const std::string& page_name, const std::string& timestamp) = 0;
+  virtual std::optional<wiki::Page::Revision> GetLastRevisionForRange(
+      const std::string& page_name, const std::string& start_timestamp,
+      const std::string& end_timestamp) = 0;
   virtual std::optional<wiki::Page::Revision> GetLastRevisionForDay(
       const std::string& page_name, const Date& date) = 0;
   virtual std::optional<wiki::Page::Revision> GetLastRevision(
@@ -36,6 +39,10 @@ class CachedPageGetter : public PageGetter {
   virtual std::optional<wiki::Page::Revision> GetRevision(
       const std::string& page_name, const std::string& timestamp) override;
 
+  std::optional<wiki::Page::Revision> GetLastRevisionForRange(
+      const std::string& page_name, const std::string& start_timestamp,
+      const std::string& end_timestamp) override;
+
   virtual std::optional<wiki::Page::Revision> GetLastRevisionForDay(
       const std::string& page_name, const Date& date) override;
 
@@ -46,9 +53,32 @@ class CachedPageGetter : public PageGetter {
   std::unique_ptr<QueryPerformer> query_;
   std::unique_ptr<PageCache> cache_;
   std::unique_ptr<CachePolicy> policy_;
+};
+
+struct DirectPageGetter : public PageGetter {
+  DirectPageGetter() = delete;
+  DirectPageGetter(std::unique_ptr<QueryPerformer>&& query_performer)
+      : query_{std::move(query_performer)} {}
+  DirectPageGetter(DirectPageGetter&) = delete;
+  DirectPageGetter(DirectPageGetter&&) = default;
+
+  virtual ~DirectPageGetter() override = default;
+
+  virtual std::optional<wiki::Page::Revision> GetRevision(
+      const std::string& page_name, const std::string& timestamp) override;
 
   std::optional<wiki::Page::Revision> GetLastRevisionForRange(
       const std::string& page_name, const std::string& start_timestamp,
-      const std::string& end_timestamp);
+      const std::string& end_timestamp) override;
+
+  virtual std::optional<wiki::Page::Revision> GetLastRevisionForDay(
+      const std::string& page_name, const Date& date) override;
+
+  virtual std::optional<wiki::Page::Revision> GetLastRevision(
+      const std::string& page_name) override;
+
+ protected:
+  std::unique_ptr<QueryPerformer> query_;
 };
+
 }  // namespace wiki

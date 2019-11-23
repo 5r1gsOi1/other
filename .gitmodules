@@ -1,3 +1,6 @@
 [submodule "third/fmt"]
 	path = third/fmt
 	url = https://github.com/fmtlib/fmt.git
+[submodule "third/re2"]
+	path = third/re2
+	url = https://github.com/google/re2.git

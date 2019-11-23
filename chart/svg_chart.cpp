@@ -159,7 +159,7 @@ void SvgChart::AddRect(const PointArea& area,
   inner_svg_->AddChild(new svg::Rect(transformed_area, attributes));
 }
 
-void SvgChart::AddCurve(const chart::Curve& curve, const svg::Attributes& attributes) {
+void SvgChart::AddCurve(const chart::Curve<double>& curve, const svg::Attributes& attributes) {
   std::vector<Point<double>> transformed_points;
   for (auto& p : curve.points) {
     if (p.x >= settings_.working_area.min.x and

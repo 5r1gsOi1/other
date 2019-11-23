@@ -84,13 +84,13 @@ class DateCurvesCreator {
         policy_{std::move(cache_policy)} {}
   virtual ~DateCurvesCreator() = default;
 
-  virtual Curves create(const Date& start_date, const Date& end_date) {
-    Curves curves{};
+  virtual Curves<double> create(const Date& start_date, const Date& end_date) {
+    Curves<double> curves{};
     auto labels = data_->GetLabels();
     std::size_t number_of_curves{labels.size()};
     curves.reserve(number_of_curves);
     for (const auto& label : labels) {
-      curves.push_back(Curve(label));
+      curves.push_back(Curve<double>{label});
       (--curves.end())->points.reserve(end_date - start_date + 1);
     }
     long x{};
@@ -129,7 +129,7 @@ class DateCurvesCreator {
 
  protected:
   void AddToCurves(const double x, const DateData& data,
-                   const std::size_t number_of_curves, Curves& curves) {
+                   const std::size_t number_of_curves, Curves<double>& curves) {
     Point<double> p{};
     p.x = x;
     for (std::size_t i{}; i < number_of_curves; ++i) {

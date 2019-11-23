@@ -25,7 +25,6 @@ add_subdirectory(statistics)
 add_subdirectory(tasks)
 
 add_executable(main main.cpp)
-target_link_libraries(main jzon wiki statistics chart charts analysis network rank_afd)
+target_link_libraries(main jzon wiki statistics chart charts analysis network rank_afd re2 pthread)
 
-
-
+include_directories("${CMAKE_SOURCE_DIR}/third/re2")

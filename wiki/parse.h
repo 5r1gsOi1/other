@@ -24,10 +24,11 @@ std::vector<std::string> ParseDayString(const std::string& day_string);
 namespace wiki::parse {
 struct UserMessage {
   std::string name{}, text{}, timestamp{};
-  bool is_ip{};
+  bool is_ip{false};
 };
 
 struct Nomination {
+  Date date;
   std::string name;
   bool is_closed;
   UserMessage start_user, close_user;
@@ -50,6 +51,13 @@ bool StringIsFullLink(const std::string& string);
 bool StringContainsLink(const std::string& string);
 
 std::string RemoveLinkBrackets(const std::string& string);
+
+inline bool NominationDateComparison(const Nomination& left,
+                                     const Nomination& right) {
+  return left.date < right.date;
+}
+
+using Nominations = std::vector<Nomination>;
 
 }  // namespace wiki::parse
 

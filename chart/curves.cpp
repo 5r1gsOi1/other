@@ -24,7 +24,7 @@ void CalculateAndAddSmoothedElement(
   }
 }
 
-void SmoothCurve(const size_t smooth_number, Curve& curve) {
+void SmoothCurve(const size_t smooth_number, Curve<double>& curve) {
   auto& points = curve.points;
   std::vector<Point<double>> smoothed_points;
   std::vector<Point<double>> block(smooth_number + 1);
@@ -56,7 +56,7 @@ bool MiddlePointMayBeDroppedOut(const Point<double>& p1,
   return area < max_area;
 }
 
-void RemoveNonVisiblePointsFrom(Curve& curve) {
+void RemoveNonVisiblePointsFrom(Curve<double>& curve) {
   auto& points{curve.points};
   const auto curve_size{points.size()};
   std::vector<Point<double>> smoothed_points;
@@ -77,7 +77,7 @@ void RemoveNonVisiblePointsFrom(Curve& curve) {
   curve.points = std::move(smoothed_points);
 }
 
-void SmoothCurves(const size_t smooth_number, Curves& curves) {
+void SmoothCurves(const size_t smooth_number, Curves<double>& curves) {
   for (size_t i{}; i < smooth_number; ++i) {
     for (auto& curve : curves) {
       RemoveNonVisiblePointsFrom(curve);

@@ -100,7 +100,64 @@ std::optional<wiki::Page::Revision> wiki::CachedPageGetter::GetLastRevision(
     policy_->PageIsAbsentOnServer(page_name);
     return std::nullopt;
   } catch (wiki::QueryPerformer::errors::Technical &e) {
-    std::cout << "\nTechnical error: " << e.what() << std::endl;
+    std::cerr << "\nTechnical error: " << e.what() << std::endl;
+    return std::nullopt;
+  }
+}
+
+std::optional<wiki::Page::Revision> wiki::DirectPageGetter::GetRevision(
+    const std::string &page_name, const std::string &timestamp) {
+  try {
+    auto page{query_->GetPageRevision(page_name, timestamp)};
+    const auto &revision{page.revisions.begin()->second};
+    return revision;
+  } catch (wiki::QueryPerformer::errors::Semantic &) {
+    return std::nullopt;
+  } catch (wiki::QueryPerformer::errors::Technical &) {
+    return std::nullopt;
+  }
+}
+
+std::optional<wiki::Page::Revision>
+wiki::DirectPageGetter::GetLastRevisionForRange(
+    const std::string &page_name, const std::string &start_timestamp,
+    const std::string &end_timestamp) {
+  try {
+    auto page{
+        query_->GetPageRevisions(page_name, start_timestamp, end_timestamp)};
+
+    auto ts{std::find_if(page.revisions.begin(), page.revisions.end(),
+                         [&start_timestamp, &end_timestamp](const auto &rv) {
+                           return rv.first >= start_timestamp and
+                                  rv.first <= end_timestamp;
+                         })};
+    if (ts != page.revisions.end()) {
+      return ts->second;
+    }
+  } catch (wiki::QueryPerformer::errors::General &) {
+    // TODO: what to do here?
+  }
+  return std::nullopt;
+}
+
+std::optional<wiki::Page::Revision>
+wiki::DirectPageGetter::GetLastRevisionForDay(const std::string &page_name,
+                                              const Date &date) {
+  const std::string start_ts{date.GetStartOfDayTimestamp()};
+  const std::string end_ts{date.GetEndOfDayTimestamp()};
+  return GetLastRevisionForRange(page_name, start_ts, end_ts);
+}
+
+std::optional<wiki::Page::Revision> wiki::DirectPageGetter::GetLastRevision(
+    const std::string &page_name) {
+  try {
+    auto page{query_->GetPageLastRevision(page_name)};
+    const auto &revision{page.revisions.begin()->second};
+    return revision;
+  } catch (wiki::QueryPerformer::errors::Semantic &) {
+    return std::nullopt;
+  } catch (wiki::QueryPerformer::errors::Technical &e) {
+    std::cerr << "\nTechnical error: " << e.what() << std::endl;
     return std::nullopt;
   }
 }

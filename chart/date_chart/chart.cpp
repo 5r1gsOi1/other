@@ -1,7 +1,7 @@
 
 #include "chart.h"
 
-PointArea CalculateExtremumValues(const chart::Curves& curves) {
+PointArea CalculateExtremumValues(const chart::Curves<double>& curves) {
   PointArea extremums{
       {std::numeric_limits<double>::max(), std::numeric_limits<double>::max()},
       {std::numeric_limits<double>::min(), std::numeric_limits<double>::min()}};
@@ -118,7 +118,7 @@ void DetailedSvgChart::SetVertialSteps(const int grid_step,
   vertical_rounding_step_ = rounding_step;
 }
 
-void DetailedSvgChart::AddCurve(const chart::Curve& curve,
+void DetailedSvgChart::AddCurve(const chart::Curve<double>& curve,
                                 const svg::Attributes& attributes,
                                 const bool add_to_legend) {
   curves_.push_back(curve);
@@ -126,7 +126,7 @@ void DetailedSvgChart::AddCurve(const chart::Curve& curve,
   add_to_legend_.push_back(add_to_legend);
 }
 
-void DetailedSvgChart::AddCurve(const chart::Curve& curve,
+void DetailedSvgChart::AddCurve(const chart::Curve<double>& curve,
                                 const svg::Attributes& attributes,
                                 const std::string& override_name) {
   chart::Curve curve_copy{curve};

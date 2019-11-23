@@ -4,4 +4,5 @@ project(charts_creator)
 add_subdirectory(jzon)
 add_subdirectory(guid)
 add_subdirectory(fmt)
+add_subdirectory(re2)
 

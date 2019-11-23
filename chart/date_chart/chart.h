@@ -8,7 +8,7 @@
 
 #include <regex>
 
-PointArea CalculateExtremumValues(const chart::Curves& curves);
+PointArea CalculateExtremumValues(const chart::Curves<double>& curves);
 
 std::vector<double> CreateMonthGridPoints(const Date& start, const Date& end);
 std::vector<double> CreateYearGridPoints(const Date& start, const Date& end);
@@ -246,10 +246,10 @@ class DetailedSvgChart : public SvgChart {
   void SetVertialSteps(const int grid_step, const int numbers_step,
                        const int rounding_step);
 
-  void AddCurve(const chart::Curve& curve, const svg::Attributes& attributes,
+  void AddCurve(const chart::Curve<double>& curve, const svg::Attributes& attributes,
                 const bool add_to_legend = true);
 
-  void AddCurve(const chart::Curve& curve, const svg::Attributes& attributes,
+  void AddCurve(const chart::Curve<double>& curve, const svg::Attributes& attributes,
                 const std::string& override_name);
 
   void AddDatesRects(const std::string& legend_name,
@@ -262,7 +262,7 @@ class DetailedSvgChart : public SvgChart {
   PointArea extremums_;
   Date start_date_, end_date_;
   int vertical_numbers_step_, vertical_grid_step_, vertical_rounding_step_;
-  std::vector<chart::Curve> curves_;
+  std::vector<chart::Curve<double>> curves_;
   std::vector<svg::Attributes> attributes_;
   std::vector<bool> add_to_legend_;
 
