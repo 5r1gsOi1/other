@@ -55,20 +55,22 @@ void SvgChart::CreateInnerSvgIfNotExists() {
 
 void SvgChart::AddGridX(const std::vector<double>& values,
                         const svg::Attributes& stroke) {
-  svg::Group* group = new svg::Group({stroke});
   CreateInnerSvgIfNotExists();
-  inner_svg_->AddChild(group);
+  std::vector<std::pair<Point<double>, char>> points;
   for (auto& i : values) {
     if (i > settings_.working_area.min.x and i < settings_.working_area.max.x) {
-      // std::cout << "drawing = " << i << std::endl;
-      group->AddChild(new svg::Line(
+      points.push_back(std::make_pair(
           Point<double>{transformer_.x(i),
                         transformer_.y(settings_.working_area.min.y)},
+          'M'));
+      points.push_back(std::make_pair(
           Point<double>{transformer_.x(i),
                         transformer_.y(settings_.working_area.max.y)},
-          {}));
+          '\0'));
     }
   }
+  svg::Path* path = new svg::Path{points, stroke};
+  inner_svg_->AddChild(path);
 }
 
 void SvgChart::AddNumbersX(
@@ -99,19 +101,22 @@ void SvgChart::AddNumbersX(
 
 void SvgChart::AddGridY(const std::vector<double>& values,
                         const svg::Attributes& stroke) {
-  svg::Group* group = new svg::Group({stroke});
   CreateInnerSvgIfNotExists();
-  inner_svg_->AddChild(group);
+  std::vector<std::pair<Point<double>, char>> points;
   for (auto& i : values) {
     if (i > settings_.working_area.min.y and i < settings_.working_area.max.y) {
-      group->AddChild(new svg::Line(
+      points.push_back(std::make_pair(
           Point<double>{transformer_.x(settings_.working_area.min.x),
                         transformer_.y(i)},
+          'M'));
+      points.push_back(std::make_pair(
           Point<double>{transformer_.x(settings_.working_area.max.x),
                         transformer_.y(i)},
-          {}));
+          '\0'));
     }
   }
+  svg::Path* path = new svg::Path{points, stroke};
+  inner_svg_->AddChild(path);
 }
 
 void SvgChart::AddNumbersY(
@@ -159,7 +164,8 @@ void SvgChart::AddRect(const PointArea& area,
   inner_svg_->AddChild(new svg::Rect(transformed_area, attributes));
 }
 
-void SvgChart::AddCurve(const chart::Curve<double>& curve, const svg::Attributes& attributes) {
+void SvgChart::AddCurve(const chart::Curve<double>& curve,
+                        const svg::Attributes& attributes) {
   std::vector<Point<double>> transformed_points;
   for (auto& p : curve.points) {
     if (p.x >= settings_.working_area.min.x and

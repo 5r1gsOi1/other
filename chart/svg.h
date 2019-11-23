@@ -157,11 +157,13 @@ struct Title : public Tag {
 };
 
 struct Path : public Tag {
+  Path(const std::vector<std::pair<Point<double>, char>>& points,
+       const Attributes& attributes_);
   Path(const std::vector<Point<double>>& points, const Attributes& attributes_);
   virtual void OutputAttributes(std::ostream& s) const override;
 
  private:
-  std::vector<Point<double>> points_;
+  std::vector<std::pair<Point<double>, char>> points_;
 };
 
 struct Rect : public Tag {

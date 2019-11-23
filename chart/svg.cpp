@@ -51,9 +51,22 @@ void svg::Rect::OutputAttributes(std::ostream &s) const {
   s << " width=\"" << size_.x << "\" height=\"" << size_.y << "\"";
 }
 
-svg::Path::Path(const std::vector<Point<double>> &points,
+svg::Path::Path(const std::vector<std::pair<Point<double>, char>> &points,
                 const svg::Attributes &attributes_)
     : points_(points) {
+  Path::name = "path";
+  attributes = attributes_;
+}
+
+svg::Path::Path(const std::vector<Point<double>> &points,
+                const svg::Attributes &attributes_) {
+  points_.reserve(points.size());
+  for (auto &p : points) {
+    points_.push_back(std::make_pair(p, '\0'));
+  }
+  if (not points_.empty()) {
+    points_.begin()->second = 'M';
+  }
   Path::name = "path";
   attributes = attributes_;
 }
@@ -64,11 +77,13 @@ void svg::Path::OutputAttributes(std::ostream &s) const {
     std::ios init(nullptr);
     init.copyfmt(s);
     constexpr const int p{1};
-    s << " d=\"M " << std::setprecision(p) << std::fixed << points_.at(0).x
-      << " " << std::setprecision(p) << std::fixed << points_.at(0).y;
-    for (auto it = points_.begin() + 1; it != points_.end(); ++it) {
-      s << " L " << std::setprecision(p) << std::fixed << it->x << " "
-        << std::setprecision(p) << std::fixed << it->y;
+    s << " d=\"";
+    for (auto it = points_.begin(); it != points_.end(); ++it) {
+      if (it->second != '\0') {
+        s << it->second << " ";
+      }
+      s << std::setprecision(p) << std::fixed << it->first.x << ","
+        << std::setprecision(p) << std::fixed << it->first.y << " ";
     }
     s << "\"";
     s.copyfmt(init);
