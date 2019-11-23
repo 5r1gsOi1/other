@@ -170,12 +170,12 @@ DibotCurvesDataPolicy::DibotCurvesDataPolicyImpl::DibotCurvesDataPolicyImpl(
 
 bool DibotCurvesDataPolicy::DibotCurvesDataPolicyImpl::CacheDataIsPreferable(
     const Date& date) {
-  return today_ - date >= 1;
+  return today_ - date > 1;
 }
 
 bool DibotCurvesDataPolicy::DibotCurvesDataPolicyImpl::DateMustBeIgnored(
     const Date& date) {
-  return date >= today_ or absent_dates_.contains(date) or
+  return date > today_ or absent_dates_.contains(date) or
          manually_excluded_dates_.contains(date);
 }
 
